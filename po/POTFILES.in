@@ -1,0 +1,8 @@
+# List of source files containing translatable strings.
+# Please keep this file sorted alphabetically.
+data/com.example.TextViewer.desktop.in
+data/com.example.TextViewer.metainfo.xml.in
+data/com.example.TextViewer.gschema.xml
+src/main.py
+src/window.py
+src/window.ui
