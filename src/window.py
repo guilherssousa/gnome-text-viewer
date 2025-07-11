@@ -42,6 +42,17 @@ class TextViewerWindow(Adw.ApplicationWindow):
         buffer = self.main_text_view.get_buffer()
         buffer.connect("notify::cursor-position", self.update_cursor_position)
 
+        self.settings = Gio.settings(schema_id="com.example.TextViewer")
+        self.settings.bind(
+            "window-width", self, "default-width", Gio.SettingsBindFlags.DEFAULT
+        )
+        self.settings.bind(
+            "window-height", self, "default-height", Gio.SettingsBindFlags.DEFAULT
+        )
+        self.settings.bind(
+            "window-maximized", self, "maximized", Gio.SettingsBindFlags.DEFAULT
+        )
+
     def open_file_dialog(self, action, _):
         native = Gtk.FileDialog()
         native.open(self, None, self.on_open_response)
