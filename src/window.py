@@ -43,7 +43,7 @@ class TextViewerWindow(Adw.ApplicationWindow):
         buffer = self.main_text_view.get_buffer()
         buffer.connect("notify::cursor-position", self.update_cursor_position)
 
-        self.settings = Gio.settings(schema_id="com.example.TextViewer")
+        self.settings = Gio.Settings(schema_id="com.example.TextViewer")
         self.settings.bind(
             "window-width", self, "default-width", Gio.SettingsBindFlags.DEFAULT
         )
@@ -97,7 +97,7 @@ class TextViewerWindow(Adw.ApplicationWindow):
         buffer.place_cursor(start)
 
         self.set_title(display_name)
-        self.toast_overlay.addToast(Adw.Toast(title=f'Opened "{display_name}"'))
+        self.toast_overlay.add_toast(Adw.Toast(title=f'Opened "{display_name}"'))
 
     def update_cursor_position(self, buffer, _):
         cursor_pos = buffer.props.cursor_position
