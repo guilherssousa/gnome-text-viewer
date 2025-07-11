@@ -16,7 +16,7 @@
             <child type="start">
               <object class="GtkButton" id="open_button">
                 <property name="label">Open</property>
-                <property name="action-name">win.open </property>
+                <property name="action-name">win.open</property>
               </object>
             </child>
             <child type="end">
