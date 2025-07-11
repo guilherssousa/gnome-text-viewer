@@ -17,11 +17,12 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from gi.repository import Adw, Gio, Gtk
+from gi.repository import Adw, Gio, GLib, Gtk
 
-@Gtk.Template(resource_path='/com/example/TextViewer/window.ui')
+
+@Gtk.Template(resource_path="/com/example/TextViewer/window.ui")
 class TextViewerWindow(Adw.ApplicationWindow):
-    __gtype_name__ = 'TextViewerWindow'
+    __gtype_name__ = "TextViewerWindow"
 
     main_text_view = Gtk.Template.Child()
     open_button = Gtk.Template.Child()
@@ -33,6 +34,10 @@ class TextViewerWindow(Adw.ApplicationWindow):
         open_action = Gio.SimpleAction(name="open")
         open_action.connect("activate", self.open_file_dialog)
         self.add_action(open_action)
+
+        save_action = Gio.SimpleAction(name="save-as")
+        save_action.connect("activate", self.save_file_dialog)
+        self.add_action(save_action)
 
         buffer = self.main_text_view.get_buffer()
         buffer.connect("notify::cursor-position", self.update_cursor_position)
@@ -66,10 +71,12 @@ class TextViewerWindow(Adw.ApplicationWindow):
             return
 
         try:
-            text = contents[1].decode('utf-8')
-        except UnicodeError as err:
-            path = fle.peek_path()
-            print(f"Unable to load the contents of {path}: the file is not encoded with UTF-8")
+            text = contents[1].decode("utf-8")
+        except UnicodeError:
+            path = file.peek_path()
+            print(
+                f"Unable to load the contents of {path}: the file is not encoded with UTF-8"
+            )
             return
 
         buffer = self.main_text_view.get_buffer()
@@ -83,6 +90,49 @@ class TextViewerWindow(Adw.ApplicationWindow):
         cursor_pos = buffer.props.cursor_position
 
         iter = buffer.get_iter_at_offset(cursor_pos)
-        line = iter.get_line()+1
-        column = iter.get_line_offset()+1
+        line = iter.get_line() + 1
+        column = iter.get_line_offset() + 1
         self.cursor_pos.set_text(f"Ln {line}, Col {column}")
+
+    def save_file_dialog(self, action, _):
+        native = Gtk.FileDialog()
+        native.save(self, None, self.on_save_response)
+
+    def on_save_response(self, dialog, result):
+        file = dialog.save_finish(result)
+
+        if file is not None:
+            self.save_file(file)
+
+    def save_file(self, file):
+        buffer = self.main_text_view.get_view()
+
+        # Retrieve the iterator at the start of the buffer
+        start = buffer.get_start_iter()
+        # Retrieve the iterator at the end of the buffer
+        end = buffer.get_end_iter()
+        # Retrieve all the visible text between the two bounds
+        text = buffer.get_text(start, end, False)
+
+        # If there is nothing to save, return early
+        if not text:
+            return
+
+        bytes = GLib.bytes.new(text.encode("utf-8"))
+
+        # Start the asynchronous operation to save the data into the file
+        file.replace_contents_bytes_async(
+            bytes, None, False, Gio.FileCreateFlags.NONE, None, self.save_file_complete
+        )
+
+    def save_file_complete(self, file, result):
+        res = file.replace_contents_finish(result)
+        info = file.query_info("standard::display-name", Gio.FileQueryInfoFlags.NONE)
+
+        if info:
+            display_name = info.get_attribute_string("standard::display-name")
+        else:
+            display_name = file.get_basename()
+
+        if not res:
+            print(f"Unable to save {display_name}")
